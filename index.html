@@ -178,36 +178,26 @@
     </script>
   </head>
   <body class="bg-[#FAF7F2] text-[#2B1B17] font-sans antialiased selection:bg-[#E2D7C8] selection:text-[#2B1B17]">
-    <!-- Pre-rendered crawlable HTML for Googlebot and search crawlers prior to React hydration -->
+    <!-- Clean, branded pre-loader while React hydrates - prevents Flash of Unstyled Content -->
     <div id="root">
-      <header style="padding: 20px; text-align: center;">
-        <h1>Heal Care Pharmacy - Buy Medicines Online, Surgical Equipment &amp; Cosmetics</h1>
-        <p>Order authentic prescription drugs, hospital surgical equipment, and skincare cosmetics with express 2-hour doorstep delivery. Call/WhatsApp: +91 9050178323.</p>
-        <nav aria-label="Main Navigation">
-          <a href="#medicines">Medicines</a> | 
-          <a href="#surgical">Surgical Equipment</a> | 
-          <a href="#cosmetics">Cosmetics</a> | 
-          <a href="#prescription">Upload Prescription</a> | 
-          <a href="#store-locator">Store Sanctuary</a>
-        </nav>
-      </header>
-      <main style="padding: 20px; max-width: 900px; margin: 0 auto;">
-        <section id="about">
-          <h2>About Heal Care Pharmacy</h2>
-          <p>Heal Care is a premier apothecary dispensary providing authentic pharmaceuticals, clinical surgical supplies, and dermatological cosmetics with verified batch numbers and licensed pharmacist consultations.</p>
-        </section>
-        <section id="services">
-          <h2>Pharmacy Services &amp; Medicine Home Delivery</h2>
-          <ul>
-            <li><strong>Prescription &amp; OTC Medicines:</strong> Vedic Ashwagandha, Paracetamol, Antibiotics, Multivitamins, Cardiac &amp; Diabetic formulations.</li>
-            <li><strong>Clinical Surgical Equipment:</strong> Digital BP Monitors, Hospital Sterilization Autoclaves, Pulse Oximeters, Orthopedic Braces, Surgical Gloves.</li>
-            <li><strong>Therapeutic Derma Cosmetics:</strong> Hyaluronic Acid Serums, Retinol Night Creams, Ceramide Moisturizers, SPF Sunscreens.</li>
-            <li><strong>Express Doorstep Delivery:</strong> Swift 2-hour home delivery across Bengaluru.</li>
-            <li><strong>Instant WhatsApp Ordering:</strong> Order directly with our pharmacist at +91 9050178323.</li>
-          </ul>
-        </section>
-      </main>
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #FAF7F2; color: #2B1B17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; border: 3px solid #EBE3D8; border-top-color: #8C5A46; animation: hc-spin 0.9s linear infinite;"></div>
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #8C5A46;">HEAL CARE</div>
+        </div>
+        <style>
+          @keyframes hc-spin { to { transform: rotate(360deg); } }
+        </style>
+      </div>
     </div>
+    <!-- Semantic crawler fallback for non-JS bots -->
+    <noscript>
+      <header style="padding: 20px; text-align: center; background-color: #FAF7F2; color: #2B1B17;">
+        <h1>Heal Care Pharmacy - Buy Medicines Online, Surgical Equipment &amp; Cosmetics</h1>
+        <p>Order authentic prescription drugs, hospital surgical equipment, and skincare cosmetics with express 2-hour doorstep delivery across Bengaluru. Call/WhatsApp: +91 9050178323.</p>
+        <p>Authentic prescription medicines, clinical surgical instruments, and therapeutic skincare cosmetics verified by licensed pharmacists.</p>
+      </header>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
