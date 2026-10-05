@@ -1,0 +1,224 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-cream: #FAF7F2;
+  --color-brand-surface: #F4EFEA;
+  --color-brand-card: #FFFFFF;
+  --color-brand-espresso: #2B1B17;
+  --color-brand-espressoHover: #1F1310;
+  --color-brand-clay: #8C5A46;
+  --color-brand-amber: #D97706;
+  --color-brand-forest: #264E36;
+  --color-brand-border: #EBE3D8;
+  --color-brand-muted: #736B63;
+
+  --font-serif: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-editorial: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-display: "Outfit", "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --shadow-soft: 0 4px 24px -2px rgba(43, 27, 23, 0.04), 0 2px 6px -1px rgba(43, 27, 23, 0.02);
+  --shadow-elevated: 0 20px 40px -4px rgba(43, 27, 23, 0.08), 0 8px 16px -4px rgba(43, 27, 23, 0.03);
+  --shadow-card: 0 12px 30px -4px rgba(62, 39, 35, 0.06);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Smooth Transitions */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a {
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transition-spring {
+  transition: all 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift {
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+.font-editorial {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-display {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Left-to-Right Continuous Reviews Marquee Animation */
+@keyframes marqueeLeftToRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee-ltr {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeftToRight 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-ltr:hover {
+  animation-play-state: paused;
+}
+
+.custom-dashed-border {
+  background-image: repeating-linear-gradient(0deg, #D4C9BC, #D4C9BC 9px, transparent 9px, transparent 18px),
+                    repeating-linear-gradient(90deg, #D4C9BC, #D4C9BC 9px, transparent 9px, transparent 18px),
+                    repeating-linear-gradient(180deg, #D4C9BC, #D4C9BC 9px, transparent 9px, transparent 18px),
+                    repeating-linear-gradient(270deg, #D4C9BC, #D4C9BC 9px, transparent 9px, transparent 18px);
+  background-size: 1.5px 100%, 100% 1.5px, 1.5px 100%, 100% 1.5px;
+  background-position: 0 0, 0 0, 100% 0, 0 100%;
+  background-repeat: no-repeat;
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+/* Glass Morpho & Transparent Navbar Styles */
+.glass-morpho {
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 
+    0 8px 32px 0 rgba(43, 27, 23, 0.04),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.glass-morpho-scrolled {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 12px 36px 0 rgba(43, 27, 23, 0.07),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+
+.glass-ribbon {
+  background: rgba(43, 27, 23, 0.58);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Golden Magical Trail Animations */
+@keyframes goldenGlowSweep {
+  0% {
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.7)) drop-shadow(0 0 8px rgba(217, 119, 6, 0.4));
+    opacity: 0.95;
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.9)) drop-shadow(0 0 16px rgba(217, 119, 6, 0.5));
+    opacity: 1;
+  }
+  100% {
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.7)) drop-shadow(0 0 10px rgba(217, 119, 6, 0.4));
+    opacity: 0.95;
+  }
+}
+
+/* Golden Particles stay vertically centered right on the letter glyph baseline */
+@keyframes goldParticleFloat {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--px, 0px)), calc(-50% + var(--py, 0px))) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--px, 0px) * 1.6), calc(-50% + var(--py, 0px) * 1.6)) scale(0.2);
+  }
+}
+
+.golden-active-word {
+  animation: goldenGlowSweep 1.8s ease-in-out infinite alternate;
+}
+
+.gold-particle {
+  animation: goldParticleFloat 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+/* Modern Tasteful Animations */
+@keyframes productCardSpawn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes productImageFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.05);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gentleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-product-spawn {
+  animation: productCardSpawn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-image-spawn {
+  animation: productImageFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-gentle-float {
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #F4EFEA 25%, #EBE3D8 50%, #F4EFEA 75%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.8s ease-in-out infinite;
+}

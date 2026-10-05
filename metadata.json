@@ -1,0 +1,6 @@
+{
+  "name": "VedaPharma | Contemporary Apothecary & Modern Medicine",
+  "description": "An elevated digital dispensary balancing clinical pharmaceutical rigor with timeless Vedic wisdom. Express 2-hour doorstep delivery, verified prescription uploads, and pure botanical formulations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
