@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Host
+Host: https://heal-care-pharmacy.vercel.app
+
+# Sitemaps
+Sitemap: https://heal-care-pharmacy.vercel.app/sitemap.xml

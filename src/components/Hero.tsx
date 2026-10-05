@@ -9,8 +9,8 @@ interface HeroProps {
 }
 
 const TOTAL_FRAMES = 300;
-// Point at which both scroll animation and text type-in reach 100% completion
-const ANIMATION_END_PROGRESS = 0.82;
+// Exact point at which both the background scroll animation and text appearing finish at the exact same time
+const ANIMATION_END_PROGRESS = 0.85;
 
 export const Hero: React.FC<HeroProps> = ({
   onExploreClick,
@@ -20,12 +20,23 @@ export const Hero: React.FC<HeroProps> = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [pinScrollProgress, setPinScrollProgress] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   // Cached frame images for 300-frame scroll animation
   const frameImagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES + 1).fill(null));
   const loadedFramesRef = useRef<Set<number>>(new Set());
   const activeFrameRef = useRef<number>(1);
-  const isNearingEndRef = useRef<boolean>(false);
+  const isCompletedRef = useRef<boolean>(false);
+
+  // Responsive device check
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Helper to format frame path: /hero-frames/frame_000001.jpg
   const getFramePath = useCallback((index: number) => {
@@ -62,7 +73,9 @@ export const Hero: React.FC<HeroProps> = ({
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Clamp DPR to 1.75 on mobile/Android to preserve battery & high FPS on Android GPUs
+    const maxDpr = window.innerWidth < 1024 ? 1.75 : 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
     const targetW = Math.round(rect.width * dpr);
     const targetH = Math.round(rect.height * dpr);
 
@@ -75,7 +88,7 @@ export const Hero: React.FC<HeroProps> = ({
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    // Object-fit: cover math across full background
+    // Object-fit: cover math across full background with optical centering
     const imgW = img.naturalWidth;
     const imgH = img.naturalHeight;
     const scale = Math.max(rect.width / imgW, rect.height / imgH);
@@ -88,7 +101,7 @@ export const Hero: React.FC<HeroProps> = ({
     ctx.restore();
   }, []);
 
-  // Progressive preloader for all 300 frames
+  // Progressive preloader for frames: Frame 1 immediately, then keyframes, then remaining
   useEffect(() => {
     let isCancelled = false;
 
@@ -116,10 +129,11 @@ export const Hero: React.FC<HeroProps> = ({
       renderFrameToCanvas(1);
     });
 
-    // Step 2: Preload keyframes every 5th frame for instant responsiveness
+    // Step 2: Preload keyframes for instant responsiveness
+    const step = window.innerWidth < 1024 ? 6 : 5;
     const preloadAll = async () => {
       const keyframes: number[] = [];
-      for (let i = 1; i <= TOTAL_FRAMES; i += 5) {
+      for (let i = 1; i <= TOTAL_FRAMES; i += step) {
         keyframes.push(i);
       }
       if (!keyframes.includes(TOTAL_FRAMES)) keyframes.push(TOTAL_FRAMES);
@@ -130,7 +144,7 @@ export const Hero: React.FC<HeroProps> = ({
         await Promise.allSettled(batch.map((idx) => loadSingleImage(idx)));
       }
 
-      // Step 3: Load remaining frames in background
+      // Step 3: Load remaining frames in background idle time
       for (let i = 1; i <= TOTAL_FRAMES; i++) {
         if (isCancelled) return;
         if (!loadedFramesRef.current.has(i)) {
@@ -164,7 +178,6 @@ export const Hero: React.FC<HeroProps> = ({
       const rect = el.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
-      // Track starts from top: 0 since navbar is hidden during the hero animation
       const scrollDistance = -rect.top;
       const totalScrollableDistance = el.offsetHeight - windowHeight;
 
@@ -180,7 +193,7 @@ export const Hero: React.FC<HeroProps> = ({
       const clamped = Math.min(1, Math.max(0, progress));
       setPinScrollProgress(clamped);
 
-      // Frame animation and text type-in finish at the EXACT SAME TIME at ANIMATION_END_PROGRESS (0.82)
+      // Unified synchronization: Frame animation & text appearance end at the EXACT SAME TIME
       const unifiedProgress = Math.min(1, clamped / ANIMATION_END_PROGRESS);
       const frameNum = Math.min(
         TOTAL_FRAMES,
@@ -192,11 +205,11 @@ export const Hero: React.FC<HeroProps> = ({
         renderFrameToCanvas(frameNum);
       }
 
-      // Check whether animation nears its end (triggers navbar and lower elements)
-      const isNearingEnd = clamped >= ANIMATION_END_PROGRESS;
-      if (isNearingEnd !== isNearingEndRef.current) {
-        isNearingEndRef.current = isNearingEnd;
-        onNearingEndChange?.(isNearingEnd);
+      // The navbar MUST be invisible until the scroll completes!
+      const isCompleted = clamped >= ANIMATION_END_PROGRESS;
+      if (isCompleted !== isCompletedRef.current) {
+        isCompletedRef.current = isCompleted;
+        onNearingEndChange?.(isCompleted);
       }
     };
 
@@ -206,79 +219,81 @@ export const Hero: React.FC<HeroProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [onNearingEndChange, renderFrameToCanvas]);
 
-  // Unified synchronized progress: Frame animation & Type-in text finish at the exact same moment
+  // Both background frame animation and text appearing reach 100% completion at the exact same moment
   const unifiedProgress = Math.min(1, pinScrollProgress / ANIMATION_END_PROGRESS);
   const textProgress = unifiedProgress;
 
-  // Lower elements (trust pill, description, CTAs, stats) load smoothly after the animation finishes
-  const isNearingEnd = pinScrollProgress >= ANIMATION_END_PROGRESS;
-  const lowerElementsProgress = isNearingEnd
-    ? Math.min(1, Math.max(0, (pinScrollProgress - ANIMATION_END_PROGRESS) / 0.16))
-    : 0;
+  // Text overlay elements (Trust pill, body, CTAs, stats) spawn in smoothly on scroll and finish at the exact same moment
+  const spawnProgress = Math.min(1, Math.max(0, (pinScrollProgress - 0.15) / (ANIMATION_END_PROGRESS - 0.15)));
+  const isOverlayVisible = pinScrollProgress > 0.02;
 
   return (
     <section
       ref={trackRef}
       className="relative bg-[#FAF7F2] border-b border-[#EBE3D8]/60"
-      style={{ height: '320vh' }}
+      style={{ height: isMobile ? '240vh' : '290vh' }}
     >
-      {/* Pinned Full-Screen Sticky Viewport */}
-      <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
+      {/* Pinned Sticky Viewport with dvh for Android URL bar resilience */}
+      <div className="sticky top-0 h-[100dvh] min-h-[100dvh] w-full flex items-center justify-center overflow-hidden touch-pan-y">
         
-        {/* Full-Background Hero Scroll Animation Canvas */}
+        {/* Full-Background Hero Scroll Animation Canvas - completely visible on mobile and desktop */}
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover block"
+          className="absolute inset-0 w-full h-full object-cover block pointer-events-none"
         />
 
-        {/* Ambient Lighting & Legibility Gradients */}
-        {/* Crisp clear window on the left, soft warm apothecary cream gradient on the right */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent from-40% via-[#FAF7F2]/20 via-65% to-[#FAF7F2]/90 to-95% pointer-events-none" />
-        {/* Subtle top and bottom vignette to blend seamlessly into next sections */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#FAF7F2]/80 via-transparent to-[#FAF7F2]/30 pointer-events-none" />
+        {/* Ambient Subtle Gradients that preserve full visibility of the formulation video while aiding text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent from-30% via-[#FAF7F2]/20 via-60% to-[#FAF7F2]/80 to-95% hidden lg:block pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#FAF7F2]/80 via-transparent to-[#FAF7F2]/25 pointer-events-none" />
 
-        {/* Initial Scroll Hint: Visible only at the very beginning, disappears as soon as user scrolls */}
+        {/* Initial Scroll Prompt: Visible at scroll = 0 on both mobile and desktop, disappears as user scrolls */}
         <div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none transition-all duration-300 z-20"
+          className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none transition-all duration-300 z-20"
           style={{
-            opacity: Math.max(0, 1 - pinScrollProgress / 0.08),
+            opacity: Math.max(0, 1 - pinScrollProgress / 0.09),
             transform: `translateX(-50%) translateY(${pinScrollProgress * 40}px)`,
           }}
         >
-          <div className="px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-[#EBE3D8] shadow-lg flex items-center gap-2.5 text-xs font-semibold text-[#2B1B17]">
+          <div className="px-4 py-2 rounded-full bg-white/92 backdrop-blur-md border border-[#EBE3D8] shadow-lg flex items-center gap-2.5 text-xs font-semibold text-[#2B1B17]">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Scroll to experience formulation</span>
+            <span>Scroll to explore formulation</span>
             <span className="inline-block animate-bounce text-[#8C5A46] font-bold">↓</span>
           </div>
         </div>
 
-        {/* Foreground Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        {/* Floating Text Animation Overlay - No opaque card box; spawns in on scroll directly over the video */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-4 sm:py-6 lg:py-8 pt-16 sm:pt-20 lg:pt-8 flex items-center justify-center lg:justify-end">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center w-full">
             
-            {/* Left columns left open to showcase the full-background product and skin animation */}
+            {/* Left columns left open to showcase the full-bleed background animation */}
             <div className="hidden lg:block lg:col-span-6 xl:col-span-7" />
 
-            {/* Right Side: Type-In Text and Lower Elements shifted gracefully to the right */}
-            <div className="lg:col-span-6 xl:col-span-5 flex flex-col items-start justify-center lg:pl-6 xl:pl-10 p-6 sm:p-8 lg:p-0 rounded-3xl lg:rounded-none bg-white/70 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none border border-white/60 lg:border-none shadow-xl lg:shadow-none transition-all duration-500 ease-out">
+            {/* Right Side / Mobile Center: Transparent Floating Overlay (NO opaque card!) */}
+            <div className="lg:col-span-6 xl:col-span-5 flex flex-col items-center text-center lg:items-start lg:text-left bg-transparent border-none shadow-none p-0 w-full transition-all duration-300">
               
-              {/* Trust Pill: Hidden until animation finishes, then loads with lower elements */}
+              {/* Trust Badge: Spawns in on scroll */}
               <div
-                className="transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mb-3 sm:mb-5"
+                className="transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] mb-3 sm:mb-4"
                 style={{
-                  opacity: lowerElementsProgress,
-                  transform: `translateY(${(1 - lowerElementsProgress) * 16}px)`,
-                  visibility: lowerElementsProgress > 0 ? 'visible' : 'hidden',
+                  opacity: spawnProgress,
+                  transform: `translateY(${(1 - spawnProgress) * 16}px)`,
+                  visibility: isOverlayVisible ? 'visible' : 'hidden',
                 }}
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm border border-[#EBE3D8]/90 text-xs font-semibold text-[#2B1B17] shadow-sm">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#8C5A46]" />
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-[#EBE3D8] text-[10px] sm:text-xs font-bold text-[#2B1B17] shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#8C5A46] shrink-0" />
                   <span className="tracking-wide">HEAL CARE • MEDICINES, SURGICAL &amp; COSMETICS</span>
                 </div>
               </div>
 
-              {/* Editorial Title: Types in simultaneously with the background scroll animation */}
-              <div className="mb-4 sm:mb-6 font-editorial text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold text-[#2B1B17] leading-[1.08] tracking-tight min-h-[90px] sm:min-h-[140px] flex items-center">
+              {/* Editorial Title: Types in simultaneously with the scroll animation with golden sparkles */}
+              <div
+                className="mb-3 sm:mb-5 font-editorial text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-[#2B1B17] leading-[1.12] sm:leading-[1.1] tracking-tight min-h-[72px] sm:min-h-[110px] flex items-center justify-center lg:justify-start transition-all duration-300"
+                style={{
+                  opacity: Math.min(1, textProgress * 2.5 + (pinScrollProgress > 0.02 ? 0.2 : 0)),
+                  transform: `scale(${0.96 + Math.min(0.04, textProgress * 0.04)})`,
+                }}
+              >
                 <GoldenMagicalTypography
                   as="h1"
                   segments={[
@@ -290,52 +305,54 @@ export const Hero: React.FC<HeroProps> = ({
                 />
               </div>
 
-              {/* Lower Elements (Body Copy, CTAs, Stats Strip): Strictly load AFTER the animation finishes */}
+              {/* Lower Overlay Elements: Body text, Action buttons, Stats - Spawns in smoothly on scroll */}
               <div
-                className="w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col items-center lg:items-start"
                 style={{
-                  opacity: lowerElementsProgress,
-                  transform: `translateY(${(1 - lowerElementsProgress) * 20}px)`,
-                  pointerEvents: lowerElementsProgress > 0.4 ? 'auto' : 'none',
-                  visibility: lowerElementsProgress > 0 ? 'visible' : 'hidden',
+                  opacity: spawnProgress,
+                  transform: `translateY(${(1 - spawnProgress) * 20}px)`,
+                  pointerEvents: spawnProgress > 0.4 ? 'auto' : 'none',
+                  visibility: isOverlayVisible ? 'visible' : 'hidden',
                 }}
               >
-                {/* Body Copy */}
-                <p className="text-[#3E3228] text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl font-medium mb-6 sm:mb-8">
-                  Welcome to Heal Care. Your premier destination for authentic prescription medicines, hospital-grade surgical equipment, and advanced derma cosmetics. Verified by licensed pharmacists with prompt doorstep delivery.
+                {/* Body Copy with soft readability drop-shadow */}
+                <p className="text-[#2B1B17] text-xs sm:text-sm lg:text-base leading-relaxed max-w-md font-medium mb-4 sm:mb-6 drop-shadow-[0_1px_4px_rgba(250,247,242,0.9)]">
+                  Welcome to Heal Care. Your premier online destination for authentic prescription medicines, hospital surgical equipment, and therapeutic derma cosmetics. Verified by licensed pharmacists with express 2-hour doorstep delivery.
                 </p>
 
-                {/* Dual CTAs */}
-                <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto mb-8 sm:mb-10">
+                {/* Dual CTAs: Frosted glass buttons overlaying the background formulation animation */}
+                <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3.5 w-full max-w-sm lg:max-w-none mb-5 sm:mb-7">
                   <button
+                    type="button"
                     onClick={onExploreClick}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#2B1B17] hover:bg-[#1F1310] hover:shadow-lg hover:-translate-y-0.5 text-white px-7 py-3.5 rounded-full text-sm font-bold tracking-wide shadow-md transition-all duration-300 group cursor-pointer"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-[#2B1B17]/95 hover:bg-[#1F1310] active:scale-98 text-white px-5 sm:px-6 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-lg backdrop-blur-md transition-all duration-200 group cursor-pointer"
                   >
-                    <span>Explore Formulations</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    <span>Explore Products</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
                   </button>
                   <button
+                    type="button"
                     onClick={onUploadClick}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-[#FAF7F2] hover:shadow-md hover:-translate-y-0.5 text-[#2B1B17] border border-[#EBE3D8] px-6 py-3.5 rounded-full text-sm font-bold tracking-wide transition-all duration-300 shadow-sm cursor-pointer"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-white/90 hover:bg-white active:scale-98 text-[#2B1B17] border border-[#EBE3D8] px-4.5 sm:px-5.5 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 shadow-md backdrop-blur-md cursor-pointer"
                   >
-                    <Upload className="w-4 h-4 text-[#8C5A46]" />
-                    <span>Upload Prescription</span>
+                    <Upload className="w-3.5 h-3.5 text-[#8C5A46]" />
+                    <span>Upload Rx</span>
                   </button>
                 </div>
 
-                {/* Stats Strip */}
-                <div className="pt-4 sm:pt-6 border-t border-[#EBE3D8]/80 grid grid-cols-3 gap-4 sm:gap-10 w-full">
+                {/* Trust Stats Strip: Floating frosted translucent pill strip */}
+                <div className="w-full max-w-md lg:max-w-none p-3 sm:p-4 rounded-2xl bg-white/75 backdrop-blur-md border border-white/80 shadow-md grid grid-cols-3 gap-2 sm:gap-4 text-center">
                   <div>
-                    <div className="font-editorial text-2xl sm:text-4xl font-bold text-[#2B1B17] tabular-nums">50k+</div>
-                    <div className="text-[10px] sm:text-[11px] font-bold tracking-wider uppercase text-[#8C5A46] mt-0.5">Happy Patients</div>
+                    <div className="font-editorial text-lg sm:text-2xl lg:text-3xl font-bold text-[#2B1B17] tabular-nums">50k+</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-[#8C5A46] mt-0.5">Happy Patients</div>
                   </div>
                   <div>
-                    <div className="font-editorial text-2xl sm:text-4xl font-bold text-[#2B1B17] tabular-nums">100%</div>
-                    <div className="text-[10px] sm:text-[11px] font-bold tracking-wider uppercase text-[#8C5A46] mt-0.5">Genuine Medicines</div>
+                    <div className="font-editorial text-lg sm:text-2xl lg:text-3xl font-bold text-[#2B1B17] tabular-nums">100%</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-[#8C5A46] mt-0.5">Genuine Meds</div>
                   </div>
                   <div>
-                    <div className="font-editorial text-2xl sm:text-4xl font-bold text-[#2B1B17] tabular-nums">120m</div>
-                    <div className="text-[10px] sm:text-[11px] font-bold tracking-wider uppercase text-[#8C5A46] mt-0.5">Doorstep Delivery</div>
+                    <div className="font-editorial text-lg sm:text-2xl lg:text-3xl font-bold text-[#2B1B17] tabular-nums">2-Hr</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-[#8C5A46] mt-0.5">Doorstep Delivery</div>
                   </div>
                 </div>
               </div>
