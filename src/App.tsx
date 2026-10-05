@@ -137,7 +137,7 @@ export default function App() {
     <div className="min-h-screen bg-[#FAF7F2] text-[#2B1B17] flex flex-col selection:bg-[#E2D7C8] selection:text-[#2B1B17]">
       {/* Top Header - Hidden during hero scroll animation, slides down and reveals as animation nears end */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`fixed top-0 left-0 right-0 z-50 w-full max-w-full overflow-x-hidden pt-[env(safe-area-inset-top,0px)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           isNavbarVisible
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-4 pointer-events-none'
