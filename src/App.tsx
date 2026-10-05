@@ -134,7 +134,7 @@ export default function App() {
   const [isNavbarVisible, setIsNavbarVisible] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#2B1B17] flex flex-col selection:bg-[#E2D7C8] selection:text-[#2B1B17]">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#2B1B17] flex flex-col w-full max-w-full overflow-x-hidden selection:bg-[#E2D7C8] selection:text-[#2B1B17]">
       {/* Top Header - Hidden during hero scroll animation, slides down and reveals as animation nears end */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 w-full max-w-full overflow-x-hidden pt-[env(safe-area-inset-top,0px)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -217,37 +217,37 @@ export default function App() {
       />
 
       {/* Floating Bottom Action Buttons: Call & WhatsApp */}
-      <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-3">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex flex-col gap-2.5 sm:gap-3 pointer-events-auto">
         {/* Floating Call Button */}
         <a
           href={`tel:${STORE_INFO.phoneRaw}`}
-          className="w-13 h-13 rounded-full bg-white text-[#2B1B17] border border-[#EBE3D8] hover:bg-[#FAF7F2] shadow-xl flex items-center justify-center transition-all hover:scale-105"
+          className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-white text-[#2B1B17] border border-[#EBE3D8] hover:bg-[#FAF7F2] shadow-xl flex items-center justify-center transition-all hover:scale-105"
           title={`Call Heal Care: ${STORE_INFO.phone}`}
           aria-label="Call Heal Care"
         >
-          <Phone className="w-5 h-5 text-[#8C5A46]" />
+          <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-[#8C5A46]" />
         </a>
 
         {/* Floating WhatsApp Quick Action */}
         <button
           onClick={() => handleOpenWhatsApp()}
-          className="w-13 h-13 rounded-full bg-[#1E6F43] hover:bg-[#185A37] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
+          className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-[#1E6F43] hover:bg-[#185A37] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
           title={`Direct WhatsApp with Heal Care (${STORE_INFO.whatsappNumber})`}
           aria-label="Chat with Heal Care"
         >
-          <MessageCircle className="w-6 h-6 fill-current" />
+          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
         </button>
 
         {/* Floating Bag Indicator on mobile/scroll */}
         {cartCount > 0 && !isCartOpen && (
           <button
             onClick={() => setIsCartOpen(true)}
-            className="w-13 h-13 rounded-full bg-[#2B1B17] hover:bg-[#1F1310] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 cursor-pointer relative"
+            className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-[#2B1B17] hover:bg-[#1F1310] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 cursor-pointer relative"
             title="Open Dispensary Bag"
             aria-label="Open Dispensary Bag"
           >
-            <ShoppingBag className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-[#8C5A46] text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs">
+            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="absolute -top-1 -right-1 min-w-[18px] sm:min-w-[20px] h-4.5 sm:h-5 px-1 bg-[#8C5A46] text-white rounded-full text-[9px] sm:text-[10px] font-bold flex items-center justify-center shadow-xs">
               {cartCount}
             </span>
           </button>

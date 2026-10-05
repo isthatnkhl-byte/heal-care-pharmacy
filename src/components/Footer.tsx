@@ -31,7 +31,7 @@ export const Footer: React.FC<FooterProps> = ({
   };
 
   return (
-    <footer className="bg-[#2B1B17] text-[#E8DFD5] pt-16 pb-12 border-t border-[#2B1B17]">
+    <footer className="bg-[#2B1B17] text-[#E8DFD5] pt-16 pb-28 sm:pb-14 border-t border-[#2B1B17] w-full max-w-full overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-12 pb-14 border-b border-white/10">
@@ -232,18 +232,18 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Bottom Disclaimer & Copyright */}
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-[#A89C8F]">
+        <div className="pt-8 flex flex-col lg:flex-row items-center justify-between gap-4 text-[11px] text-[#A89C8F] text-center lg:text-left">
           <p>© 2026 {STORE_INFO.name}. All rights reserved.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 max-w-full">
             <a href={STORE_INFO.mapUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
               Find Us on Google Maps
             </a>
-            <span>•</span>
+            <span className="hidden sm:inline">•</span>
             <a href={`tel:${STORE_INFO.phoneRaw}`} className="hover:text-white transition-colors">
               Call: {STORE_INFO.phone}
             </a>
-            <span>•</span>
-            <a href={`mailto:${STORE_INFO.email}`} className="hover:text-white transition-colors">
+            <span className="hidden sm:inline">•</span>
+            <a href={`mailto:${STORE_INFO.email}`} className="hover:text-white transition-colors break-all">
               {STORE_INFO.email}
             </a>
           </div>

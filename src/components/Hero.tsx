@@ -230,7 +230,7 @@ export const Hero: React.FC<HeroProps> = ({
   return (
     <section
       ref={trackRef}
-      className="relative bg-[#FAF7F2] border-b border-[#EBE3D8]/60"
+      className="relative bg-[#FAF7F2] border-b border-[#EBE3D8]/60 w-full max-w-full overflow-hidden"
       style={{ height: isMobile ? '240vh' : '290vh' }}
     >
       {/* Pinned Sticky Viewport with dvh for Android URL bar resilience */}

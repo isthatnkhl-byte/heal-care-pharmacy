@@ -42,7 +42,7 @@ export const Testimonials: React.FC = () => {
   const marqueeItems = [...EXTENDED_TESTIMONIALS, ...EXTENDED_TESTIMONIALS];
 
   return (
-    <section className="py-24 bg-[#FAF7F2] border-t border-[#EBE3D8]/80 overflow-hidden relative">
+    <section className="py-24 bg-[#FAF7F2] border-t border-[#EBE3D8]/80 w-full max-w-full overflow-hidden relative">
       
       {/* Warm Ambient Aura in background */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-r from-amber-200/20 via-orange-100/20 to-emerald-100/20 blur-3xl pointer-events-none rounded-full" />
