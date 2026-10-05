@@ -198,6 +198,13 @@
         <p>Authentic prescription medicines, clinical surgical instruments, and therapeutic skincare cosmetics verified by licensed pharmacists.</p>
       </header>
     </noscript>
+    <script>
+      // Ensure browser starts at top on every reload/refresh
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

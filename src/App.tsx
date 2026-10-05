@@ -19,6 +19,14 @@ import { PRODUCTS, Product, STORE_INFO } from './data/apothecaryData';
 import { MessageCircle, ShoppingBag, ArrowUp, Phone } from 'lucide-react';
 
 export default function App() {
+  // Ensure browser starts at top on every reload/refresh
+  React.useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+  }, []);
+
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {

@@ -169,6 +169,25 @@ export const Hero: React.FC<HeroProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [renderFrameToCanvas]);
 
+  // Keep progress ref in sync for synchronous event handlers
+  const pinScrollProgressRef = useRef<number>(0);
+  useEffect(() => {
+    pinScrollProgressRef.current = pinScrollProgress;
+  }, [pinScrollProgress]);
+
+  // Restart from beginning on initial load and page refresh
+  useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+    setPinScrollProgress(0);
+    pinScrollProgressRef.current = 0;
+    isCompletedRef.current = false;
+    activeFrameRef.current = 1;
+    renderFrameToCanvas(1);
+  }, [renderFrameToCanvas]);
+
   // Update canvas when pinScrollProgress updates
   useEffect(() => {
     const frameNum = Math.min(
@@ -187,24 +206,36 @@ export const Hero: React.FC<HeroProps> = ({
     }
   }, [pinScrollProgress, onNearingEndChange, renderFrameToCanvas]);
 
-  // Gesture Scroll Intercept: The user CANNOT scroll down past the Hero until the animation completes!
+  // Replayable Gesture Scroll Intercept:
+  // - When at the top (scrollY <= 5) and progress < 1: scrolling down drives animation forward.
+  // - When scrolled back up to top (scrollY <= 5) and progress > 0: scrolling up REWINDS animation back to start!
   useEffect(() => {
     let touchStartY = 0;
 
     const onWheel = (e: WheelEvent) => {
-      // If at top of the page and animation has not completed: prevent page scroll and drive animation
-      if (!isCompletedRef.current && window.scrollY <= 10) {
-        if (e.deltaY > 0) {
-          // Scrolling down - advance animation
+      const scrollY = window.scrollY;
+      const progress = pinScrollProgressRef.current;
+
+      if (scrollY <= 5) {
+        // Forward play on scroll down when not at 100%
+        if (e.deltaY > 0 && progress < 0.99) {
           e.preventDefault();
           setPinScrollProgress((prev) => {
-            const next = Math.min(1, prev + Math.min(0.045, Math.abs(e.deltaY) * 0.00085));
+            const step = Math.min(0.045, Math.abs(e.deltaY) * 0.00085);
+            const next = Math.min(1, prev + step);
+            pinScrollProgressRef.current = next;
             return next;
           });
-        } else if (e.deltaY < 0 && pinScrollProgress > 0) {
-          // Scrolling up - rewind animation
+        }
+        // Replayable rewind on scroll up when at top
+        else if (e.deltaY < 0 && progress > 0) {
           e.preventDefault();
-          setPinScrollProgress((prev) => Math.max(0, prev - Math.min(0.045, Math.abs(e.deltaY) * 0.00085)));
+          setPinScrollProgress((prev) => {
+            const step = Math.min(0.045, Math.abs(e.deltaY) * 0.00085);
+            const next = Math.max(0, prev - step);
+            pinScrollProgressRef.current = next;
+            return next;
+          });
         }
       }
     };
@@ -214,17 +245,29 @@ export const Hero: React.FC<HeroProps> = ({
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (!isCompletedRef.current && window.scrollY <= 10) {
-        const delta = touchStartY - e.touches[0].clientY;
-        if (delta > 0) {
-          // Swiping up to scroll down - advance animation
+      const scrollY = window.scrollY;
+      const progress = pinScrollProgressRef.current;
+      const delta = touchStartY - e.touches[0].clientY;
+
+      if (scrollY <= 5) {
+        // Swiping up to advance animation
+        if (delta > 0 && progress < 0.99) {
           e.preventDefault();
-          setPinScrollProgress((prev) => Math.min(1, prev + delta * 0.0035));
+          setPinScrollProgress((prev) => {
+            const next = Math.min(1, prev + Math.abs(delta) * 0.0035);
+            pinScrollProgressRef.current = next;
+            return next;
+          });
           touchStartY = e.touches[0].clientY;
-        } else if (delta < 0 && pinScrollProgress > 0) {
-          // Swiping down to scroll up - rewind animation
+        }
+        // Swiping down at top to rewind animation
+        else if (delta < 0 && progress > 0) {
           e.preventDefault();
-          setPinScrollProgress((prev) => Math.max(0, prev + delta * 0.0035));
+          setPinScrollProgress((prev) => {
+            const next = Math.max(0, prev - Math.abs(delta) * 0.0035);
+            pinScrollProgressRef.current = next;
+            return next;
+          });
           touchStartY = e.touches[0].clientY;
         }
       }
@@ -239,15 +282,20 @@ export const Hero: React.FC<HeroProps> = ({
       window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchmove', onTouchMove);
     };
-  }, [pinScrollProgress]);
+  }, []);
 
-  // Standard scroll handler for normal scrolling once unlocked
+  // Normal scroll handler when user is deep in page content
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50 && !isCompletedRef.current) {
-        isCompletedRef.current = true;
-        setPinScrollProgress(1);
-        onNearingEndChange?.(true);
+      if (window.scrollY > 40) {
+        if (pinScrollProgressRef.current < 0.99) {
+          setPinScrollProgress(1);
+          pinScrollProgressRef.current = 1;
+        }
+        if (!isCompletedRef.current) {
+          isCompletedRef.current = true;
+          onNearingEndChange?.(true);
+        }
       }
     };
 
