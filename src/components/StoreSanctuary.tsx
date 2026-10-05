@@ -8,8 +8,13 @@ interface StoreSanctuaryProps {
 }
 
 export const StoreSanctuary: React.FC<StoreSanctuaryProps> = ({ onOpenConsultationModal }) => {
+  const [headlineProgress, setHeadlineProgress] = useState<number>(0);
+
+  // Lower section reveals smoothly as headline types in, reaching 100% full reveal
+  const lowerLoadProgress = Math.min(1, Math.max(0, (headlineProgress - 0.4) / 0.5));
+
   return (
-    <section className="py-20 lg:py-24 bg-white w-full max-w-full overflow-hidden" id="store-locator">
+    <section className="py-20 lg:py-24 bg-white" id="store-locator">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left Sanctuary Information */}
@@ -24,11 +29,19 @@ export const StoreSanctuary: React.FC<StoreSanctuaryProps> = ({ onOpenConsultati
                   { text: 'Step Into ', colorClass: 'text-[#2B1B17] font-bold' },
                   { text: 'Heal Care Sanctuary.', isItalic: true, colorClass: 'text-[#8C5A46] font-bold' },
                 ]}
+                onProgressChange={(p) => setHeadlineProgress(p)}
               />
             </div>
 
-            {/* Lower Information */}
-            <div>
+            {/* Lower Information: Loads in cleanly when the typography completes */}
+            <div
+              className="transition-all duration-300 ease-out"
+              style={{
+                opacity: lowerLoadProgress,
+                transform: `translateY(${(1 - lowerLoadProgress) * 16}px)`,
+                pointerEvents: lowerLoadProgress > 0.3 ? 'auto' : 'none',
+              }}
+            >
               <p className="text-base sm:text-lg text-[#5C5248] mb-8 leading-relaxed font-normal">
                 Welcome to Heal Care. We stock genuine prescription medicines, comprehensive clinical surgical equipment, and specialized derma cosmetics with dedicated pharmacist guidance.
               </p>
@@ -135,8 +148,15 @@ export const StoreSanctuary: React.FC<StoreSanctuaryProps> = ({ onOpenConsultati
             </div>
           </div>
 
-          {/* Right Store Visual / Interactive Card */}
-          <div className="lg:col-span-6">
+          {/* Right Store Visual / Interactive Card: Loads in cleanly when typography completes */}
+          <div
+            className="lg:col-span-6 transition-all duration-300 ease-out"
+            style={{
+              opacity: lowerLoadProgress,
+              transform: `translateY(${(1 - lowerLoadProgress) * 16}px)`,
+              pointerEvents: lowerLoadProgress > 0.3 ? 'auto' : 'none',
+            }}
+          >
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#EBE3D8] bg-[#F4EFEA] p-2">
               <div className="relative h-96 w-full rounded-2xl overflow-hidden group">
                 <img

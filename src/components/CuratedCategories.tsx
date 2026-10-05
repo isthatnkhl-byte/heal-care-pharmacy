@@ -33,8 +33,13 @@ export const CuratedCategories: React.FC<CuratedCategoriesProps> = ({
   onSelectCategory,
   onOpenPrescription,
 }) => {
+  const [headlineProgress, setHeadlineProgress] = useState<number>(0);
+
+  // Lower section cards reveal smoothly as headline types in, reaching 100% full reveal
+  const lowerLoadProgress = Math.min(1, Math.max(0, (headlineProgress - 0.4) / 0.5));
+
   return (
-    <section className="py-20 lg:py-24 bg-[#FAF7F2] w-full max-w-full overflow-hidden" id="categories">
+    <section className="py-20 lg:py-24 bg-[#FAF7F2]" id="categories">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
@@ -47,6 +52,7 @@ export const CuratedCategories: React.FC<CuratedCategoriesProps> = ({
               segments={[
                 { text: 'Curated for Your Care', colorClass: 'text-[#2B1B17] font-bold' },
               ]}
+              onProgressChange={(p) => setHeadlineProgress(p)}
             />
           </div>
           <div className="w-12 h-1 bg-[#8C5A46] mx-auto mt-4 mb-4 rounded-full"></div>
@@ -56,7 +62,14 @@ export const CuratedCategories: React.FC<CuratedCategoriesProps> = ({
         </div>
 
         {/* 3 Core Sold Sections: Medicines, Surgical Equipment, Cosmetics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 transition-all duration-300 ease-out"
+          style={{
+            opacity: lowerLoadProgress,
+            transform: `translateY(${(1 - lowerLoadProgress) * 20}px)`,
+            pointerEvents: lowerLoadProgress > 0.3 ? 'auto' : 'none',
+          }}
+        >
           {/* Department 1: Medicines */}
           <button
             onClick={() => {

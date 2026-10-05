@@ -206,6 +206,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  const [headlineProgress, setHeadlineProgress] = useState<number>(0);
+
+  // Lower section reveals smoothly as headline types in, reaching 100% full reveal
+  const lowerLoadProgress = Math.min(1, Math.max(0, (headlineProgress - 0.4) / 0.5));
 
   // Filter products
   const filteredProducts = products.filter((p) => {
@@ -242,7 +246,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   };
 
   return (
-    <section className="py-20 lg:py-24 bg-[#FAF7F2] border-t border-[#EBE3D8]/60 w-full max-w-full overflow-hidden" id="featured-products">
+    <section className="py-20 lg:py-24 bg-[#FAF7F2] border-t border-[#EBE3D8]/60" id="featured-products">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
@@ -257,6 +261,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   { text: 'Medicines, Surgical & \n', colorClass: 'text-[#2B1B17] font-bold' },
                   { text: 'Cosmetics.', isItalic: true, colorClass: 'text-[#8C5A46] font-bold' },
                 ]}
+                onProgressChange={(p) => setHeadlineProgress(p)}
               />
             </div>
           </div>
@@ -292,7 +297,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         </div>
 
         {/* Lower Container: Tabs & Product Grid */}
-        <div>
+        <div
+          className="transition-all duration-300 ease-out"
+          style={{
+            opacity: lowerLoadProgress,
+            transform: `translateY(${(1 - lowerLoadProgress) * 20}px)`,
+            pointerEvents: lowerLoadProgress > 0.3 ? 'auto' : 'none',
+          }}
+        >
           {/* Category Tabs: Medicines, Surgical Equipment, Cosmetics */}
           <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 text-xs font-semibold scrollbar-none">
             <button

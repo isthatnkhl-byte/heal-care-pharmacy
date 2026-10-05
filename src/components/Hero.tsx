@@ -9,8 +9,8 @@ interface HeroProps {
 }
 
 const TOTAL_FRAMES = 300;
-// Exact point at which both the background scroll animation and text appearing finish at the exact same time
-const ANIMATION_END_PROGRESS = 0.85;
+// Animation and text completion synchronize exactly at 1.0 (100% full completion)
+const ANIMATION_END_PROGRESS = 1.0;
 
 export const Hero: React.FC<HeroProps> = ({
   onExploreClick,
@@ -169,62 +169,111 @@ export const Hero: React.FC<HeroProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [renderFrameToCanvas]);
 
-  // Pinned scroll handler
+  // Update canvas when pinScrollProgress updates
+  useEffect(() => {
+    const frameNum = Math.min(
+      TOTAL_FRAMES,
+      Math.max(1, Math.round(pinScrollProgress * (TOTAL_FRAMES - 1)) + 1)
+    );
+    if (frameNum !== activeFrameRef.current) {
+      activeFrameRef.current = frameNum;
+      renderFrameToCanvas(frameNum);
+    }
+
+    const isComplete = pinScrollProgress >= 0.98;
+    if (isComplete !== isCompletedRef.current) {
+      isCompletedRef.current = isComplete;
+      onNearingEndChange?.(isComplete);
+    }
+  }, [pinScrollProgress, onNearingEndChange, renderFrameToCanvas]);
+
+  // Gesture Scroll Intercept: The user CANNOT scroll down past the Hero until the animation completes!
+  useEffect(() => {
+    let touchStartY = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      // If at top of the page and animation has not completed: prevent page scroll and drive animation
+      if (!isCompletedRef.current && window.scrollY <= 10) {
+        if (e.deltaY > 0) {
+          // Scrolling down - advance animation
+          e.preventDefault();
+          setPinScrollProgress((prev) => {
+            const next = Math.min(1, prev + Math.min(0.045, Math.abs(e.deltaY) * 0.00085));
+            return next;
+          });
+        } else if (e.deltaY < 0 && pinScrollProgress > 0) {
+          // Scrolling up - rewind animation
+          e.preventDefault();
+          setPinScrollProgress((prev) => Math.max(0, prev - Math.min(0.045, Math.abs(e.deltaY) * 0.00085)));
+        }
+      }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isCompletedRef.current && window.scrollY <= 10) {
+        const delta = touchStartY - e.touches[0].clientY;
+        if (delta > 0) {
+          // Swiping up to scroll down - advance animation
+          e.preventDefault();
+          setPinScrollProgress((prev) => Math.min(1, prev + delta * 0.0035));
+          touchStartY = e.touches[0].clientY;
+        } else if (delta < 0 && pinScrollProgress > 0) {
+          // Swiping down to scroll up - rewind animation
+          e.preventDefault();
+          setPinScrollProgress((prev) => Math.max(0, prev + delta * 0.0035));
+          touchStartY = e.touches[0].clientY;
+        }
+      }
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [pinScrollProgress]);
+
+  // Standard scroll handler for normal scrolling once unlocked
   useEffect(() => {
     const handleScroll = () => {
-      const el = trackRef.current;
-      if (!el) return;
-
-      const rect = el.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      const scrollDistance = -rect.top;
-      const totalScrollableDistance = el.offsetHeight - windowHeight;
-
-      let progress = 0;
-      if (scrollDistance <= 0) {
-        progress = 0;
-      } else if (scrollDistance >= totalScrollableDistance) {
-        progress = 1;
-      } else {
-        progress = scrollDistance / totalScrollableDistance;
-      }
-
-      const clamped = Math.min(1, Math.max(0, progress));
-      setPinScrollProgress(clamped);
-
-      // Unified synchronization: Frame animation & text appearance end at the EXACT SAME TIME
-      const unifiedProgress = Math.min(1, clamped / ANIMATION_END_PROGRESS);
-      const frameNum = Math.min(
-        TOTAL_FRAMES,
-        Math.max(1, Math.round(unifiedProgress * (TOTAL_FRAMES - 1)) + 1)
-      );
-
-      if (frameNum !== activeFrameRef.current) {
-        activeFrameRef.current = frameNum;
-        renderFrameToCanvas(frameNum);
-      }
-
-      // The navbar MUST be invisible until the scroll completes!
-      const isCompleted = clamped >= ANIMATION_END_PROGRESS;
-      if (isCompleted !== isCompletedRef.current) {
-        isCompletedRef.current = isCompleted;
-        onNearingEndChange?.(isCompleted);
+      if (window.scrollY > 50 && !isCompletedRef.current) {
+        isCompletedRef.current = true;
+        setPinScrollProgress(1);
+        onNearingEndChange?.(true);
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [onNearingEndChange, renderFrameToCanvas]);
+  }, [onNearingEndChange]);
+
+  const handleExplore = () => {
+    isCompletedRef.current = true;
+    setPinScrollProgress(1);
+    onNearingEndChange?.(true);
+    onExploreClick();
+  };
+
+  const handleUpload = () => {
+    isCompletedRef.current = true;
+    setPinScrollProgress(1);
+    onNearingEndChange?.(true);
+    onUploadClick();
+  };
 
   // Both background frame animation and text appearing reach 100% completion at the exact same moment
-  const unifiedProgress = Math.min(1, pinScrollProgress / ANIMATION_END_PROGRESS);
-  const textProgress = unifiedProgress;
+  const textProgress = pinScrollProgress;
 
   // Text overlay elements (Trust pill, body, CTAs, stats) spawn in smoothly on scroll and finish at the exact same moment
-  const spawnProgress = Math.min(1, Math.max(0, (pinScrollProgress - 0.15) / (ANIMATION_END_PROGRESS - 0.15)));
+  const spawnProgress = Math.min(1, Math.max(0, (pinScrollProgress - 0.15) / 0.85));
   const isOverlayVisible = pinScrollProgress > 0.02;
 
   return (
@@ -324,7 +373,7 @@ export const Hero: React.FC<HeroProps> = ({
                 <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3.5 w-full max-w-sm lg:max-w-none mb-5 sm:mb-7">
                   <button
                     type="button"
-                    onClick={onExploreClick}
+                    onClick={handleExplore}
                     className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-[#2B1B17]/95 hover:bg-[#1F1310] active:scale-98 text-white px-5 sm:px-6 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-lg backdrop-blur-md transition-all duration-200 group cursor-pointer"
                   >
                     <span>Explore Products</span>
@@ -332,7 +381,7 @@ export const Hero: React.FC<HeroProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={onUploadClick}
+                    onClick={handleUpload}
                     className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-white/90 hover:bg-white active:scale-98 text-[#2B1B17] border border-[#EBE3D8] px-4.5 sm:px-5.5 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 shadow-md backdrop-blur-md cursor-pointer"
                   >
                     <Upload className="w-3.5 h-3.5 text-[#8C5A46]" />

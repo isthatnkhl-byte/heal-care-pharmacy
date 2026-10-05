@@ -19,6 +19,10 @@ export const PrescriptionUploadWorkflow: React.FC<PrescriptionUploadWorkflowProp
   const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
   const [showSuccessToast, setShowSuccessToast] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [headlineProgress, setHeadlineProgress] = useState<number>(0);
+
+  // Lower section reveals smoothly as headline types in, reaching 100% full reveal
+  const lowerLoadProgress = Math.min(1, Math.max(0, (headlineProgress - 0.4) / 0.5));
 
   const startAnalysis = (sampleRx = SAMPLE_PRESCRIPTIONS[0], customFileName = 'Doctor_Prescription_Slip.pdf') => {
     setSelectedFile(customFileName);
@@ -80,7 +84,7 @@ export const PrescriptionUploadWorkflow: React.FC<PrescriptionUploadWorkflowProp
   };
 
   return (
-    <section className="py-20 lg:py-24 bg-[#F5EFE8] border-y border-[#EBE3D8] w-full max-w-full overflow-hidden" id="prescription-order">
+    <section className="py-20 lg:py-24 bg-[#F5EFE8] border-y border-[#EBE3D8]" id="prescription-order">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left: Steps & Direct WhatsApp */}
@@ -96,10 +100,18 @@ export const PrescriptionUploadWorkflow: React.FC<PrescriptionUploadWorkflowProp
                   { text: 'The Simplest Way to \n', colorClass: 'text-[#2B1B17] font-bold' },
                   { text: 'Order Your Medicines.', isItalic: true, colorClass: 'text-[#8C5A46] font-bold' },
                 ]}
+                onProgressChange={(p) => setHeadlineProgress(p)}
               />
             </div>
             {/* Lower Content */}
-            <div>
+            <div
+              className="transition-all duration-300 ease-out"
+              style={{
+                opacity: lowerLoadProgress,
+                transform: `translateY(${(1 - lowerLoadProgress) * 16}px)`,
+                pointerEvents: lowerLoadProgress > 0.3 ? 'auto' : 'none',
+              }}
+            >
               <p className="text-base sm:text-lg text-[#5C5248] mb-8 leading-relaxed font-normal">
                 Skip pharmacy lines and complicated checkout carts. Upload a clear photograph of your prescription slip and our licensed team will handle verification, insurance coordination, and doorstep delivery.
               </p>
@@ -165,7 +177,14 @@ export const PrescriptionUploadWorkflow: React.FC<PrescriptionUploadWorkflowProp
           </div>
 
           {/* Right: Prescription Drop Zone Card with Interactive Verification */}
-          <div className="lg:col-span-6">
+          <div
+            className="lg:col-span-6 transition-all duration-300 ease-out"
+            style={{
+              opacity: lowerLoadProgress,
+              transform: `translateY(${(1 - lowerLoadProgress) * 16}px)`,
+              pointerEvents: lowerLoadProgress > 0.3 ? 'auto' : 'none',
+            }}
+          >
             <div className="bg-white rounded-3xl p-6 sm:p-9 shadow-2xl border border-[#EBE3D8] relative overflow-hidden">
               {/* Corner Apothecary Mortar Motif */}
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#F4EFEA] rounded-full flex items-end justify-start p-4 text-[#736B63]/25 pointer-events-none">
